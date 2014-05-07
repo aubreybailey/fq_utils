@@ -1,0 +1,128 @@
+#!/bin/env python2.7
+#
+#
+# Just a cute little python script to switch between different fastq format (sanger, solexa, illumina 1,5 and 1,8)
+# Slow, but does the job. Better than emboss (it actually works).
+#
+# Jordan Texier, Jan 2014
+# DittmerLab, UNC
+
+
+
+
+def stringOffset(string, n):
+	"""Offsets a string's ascii values by an offset of 'n'"""
+	charlist=[]
+
+	for char in string:
+		val=ord(char)
+		newval=val + n
+		newchar=chr(newval)
+		charlist.append(newchar)
+
+	return "".join(charlist)
+
+
+
+
+
+# ------------------------------ #
+# ============ MAIN ============ #
+# ------------------------------ #
+
+if __name__=="__main__":
+
+
+	import sys
+	import argparse
+	
+	# Create Parser, required and optional args. Then parse:
+	parser = argparse.ArgumentParser(description='Changes the fastq format of a file',
+						prog='fq_translate',
+						usage='%(prog)s -i input_file -if input_format -of output_format [-o output_file]',
+						formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position = 50),
+						add_help=False)
+	
+	required = parser.add_argument_group('Required Arguments')
+	required.add_argument('-i', '--input', default='',  help='input file')
+	required.add_argument('-if', '--in-format', default='', type=str, help='Input format ("sanger", "solexa", "illumina-1.5", "illumina-1.8")')
+	required.add_argument('-of', '--out-format', default='', type=str, help='Output format (same as -if)')
+	
+	optional = parser.add_argument_group('Optional Arguments')
+	optional.add_argument('-h', '--help', action='help')
+	optional.add_argument('-o', '--output', default='',  help='output file, if empty print to console')
+
+
+	args = vars(parser.parse_args())
+
+
+	# Verify required args:
+	if(args["input"] == ''):
+		parser.print_help()
+		sys.exit()
+	
+	# Find ASCII Offset:
+	if(args["out_format"] == '' and args["in_format"] == ''):
+		# Define default offset
+		offset = 31
+	else:
+		if(args["out_format"] == '' or args["in_format"] == ''):
+			print "Both input and output format must be defined:"
+			parser.print_help()
+			sys.exit()
+		
+		inAscii = 0
+		if(args["in_format"] == '18' or args["in_format"] == 'illumina-1.8'
+				or args["in_format"] == 'sanger'):
+			inAscii = 33
+		elif(args["in_format"] == '15' or args["in_format"] == 'illumina-1.5'
+				or args["in_format"] == 'solexa'):
+			inAscii = 64
+		else:
+			print "Input format not recognized:\n"
+			print args["in_format"]
+			print "Acceptable arguments:\n illumina-1.8,\n illumina-1.5,\n sanger, or\n solexa."
+			parser.print_help()
+			sys.exit()
+
+
+
+		outAscii = 0
+		if(args["out_format"] == '18' or args["out_format"] == 'illumina-1.8'
+				or args["out_format"] == 'sanger'):
+			outAscii = 33
+		elif(args["out_format"] == '15' or args["out_format"] == 'illumina-1.5'
+				or args["out_format"] == 'solexa'):
+			outAscii = 64
+		else:
+			print "Output format not recognized\n"
+			print "Acceptable arguments:\n illumina-1.8,\n illumina-1.5,\n sanger, or\n solexa."
+			parser.print_help()
+			sys.exit()
+
+		offset = outAscii - inAscii
+
+
+
+	# Begin translation: 	
+	
+	with open(args['input']) as infile:
+		i=0
+	
+		if (args['output'] is ''):
+			out = sys.stdout
+		else:
+			out = open(args['output'], 'a')
+
+		for line in infile:
+			if (i%4 == 3):
+				newStr = stringOffset(line[:-1], offset)
+				out.write(newStri + '\n')
+			else: 
+				out.write(line)
+
+		infile.close()
+
+
+
+

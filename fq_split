@@ -1,0 +1,120 @@
+#!/bin/env python2.7
+
+
+def exit(str):
+	print str
+	parser.print_help()
+	sys.exit()
+
+
+def getRead(lines, pos, length):
+	"""Return a read of determined length starting at position"""
+
+	read=''
+	linelength = len(lines[0]) - 1
+	
+	linenum = pos / linelength
+	start = pos % linelength
+#	print linenum
+#	print len(lines)
+
+
+#	if linenum == (len(lines) - 1):
+#		exit("last line")
+#		return lines[linenum][start:-1]
+
+	i = 0
+	while (len(read) < length):
+		#print str(linenum + i)
+		if ((linenum + i) == len(lines)):
+			return read
+		
+		read = read + lines[linenum + i][start:-1]
+		start = 0
+		i += 1
+	
+	if (len(read) > length):
+		read = read[:length]
+
+	return read
+
+def getSize(lines):
+	N = len(lines)
+	linelength = len(lines[0])
+
+	lastlength = len(lines[N - 1])
+
+	return (N - 1)*linelength + lastlength
+
+
+if __name__=="__main__":
+	
+	import sys
+	import argparse
+
+	parser = argparse.ArgumentParser(description = 'Splits a fasta genome file into ordered reades with overlap.',
+						prog='fq_split', usage = '%(prog)s -i input_file [optional arguments]',
+						formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position = 50, width = 200),
+						add_help = False)
+
+	required = parser.add_argument_group('Required Arguments')
+	required.add_argument('-i', '--input', default = '', help = 'input file')
+	
+	optional = parser.add_argument_group('Optional Arguemnts')
+	optional.add_argument('-l', '--read-length', default = 60, type = int, help = 'readlength (60)')
+	optional.add_argument('-ovl', '--overlap', default = 12, type = int, help = 'reads overlap (12)')
+	optional.add_argument('-o', '--output', default = '', help = 'output file (stdout)')
+	optional.add_argument('-H', '--headers', action = 'store_true', help = 'display headers in output (False)')
+	optional.add_argument('-h', '--help', action='help')
+
+	args = vars( parser.parse_args() )
+
+	# Verify input validity:
+	if (args['input'] is ''):
+		exit("No inputs provided")
+	if (args['overlap'] < 0):
+		exit('Overlap can\'t be negative')
+	if (args['overlap'] > args['read_length']):
+		exit('Overlap can\'t be larger than read-length')
+	if (args['read_length'] < 0):
+		exit('Read length can\'t be negative')
+
+
+	if (args['output'] is ''):
+		out = sys.stdout
+	else:
+		out = open(args['output'], 'w')
+
+
+	
+	#try:
+	# Open files, find loop max
+	infile = open(args['input'], 'r')
+	lines = infile.readlines()
+	del lines[0]
+
+	max = getSize(lines)
+
+	# Begin loop
+	position = 0
+	while ((position + args['read_length']) <= (max - 1)):
+		read = getRead(lines, position, args['read_length'])
+		
+		if (read is ''):
+			break
+		
+		if args['headers']:
+			header = ">Split_reads-" + args['input'] + "-pos" + str(position)
+			out.write(header + '\n')
+		out.write(read + '\n')
+
+		position += (args['read_length'] - args['overlap'])
+
+
+
+	if (not args['output'] is ''):
+		out.close()
+
+	# End of program
+
+

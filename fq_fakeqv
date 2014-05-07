@@ -1,0 +1,122 @@
+#!/bin/env python2.7
+# 
+# Transform a fasta file into a fastq by faking quality scores
+# 
+
+
+#def randQV(str):
+		
+
+def fixedQV(str, qv):
+
+	qvstr=''
+	for char in str:
+		qvstr = qvstr + qv
+		
+	return qvstr
+
+def gaussQV(str, qv, std):
+	
+	I=ord(qv)
+	
+	qvstr=''
+	for char in str:
+		newI = random.gauss(I, std)
+		qvstr = qvstr + chr( int(newI) )
+
+	return qvstr
+	
+
+if __name__ == "__main__":
+	
+	import argparse
+	import sys
+	import random
+
+	parser = argparse.ArgumentParser(description='Creates fake QV to transform fasta into fastq',
+					prog='fq_fakeqv', usage='%(prog)s -i fasta_input { -ph phred_score(int) / -qv qv_char(char) } [options]',
+					formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position = 50),
+					add_help=False)
+
+	required = parser.add_argument_group('Required Arguments')
+	required.add_argument('-i', '--input', default='', help="Input fasta file")
+	required.add_argument('-ph', '--phred', type=int, default=-1, help='integer Phred quality value')
+	required.add_argument('-qv', '--qscore', type=str, default="", help='char value for QV (exactly one of -qv/-ph necessary)')
+	
+
+	optional = parser.add_argument_group('Optional arguments')
+	optional.add_argument('-h', '--help', action='help', help='print this text and exit')
+	optional.add_argument('-o', '--output', default='', help='output file. If empty prints to console (none)')
+	optional.add_argument('-H', '--headers', action='store_true', default=False, help='required if input fasta contains header lines (false)')
+	optional.add_argument('-P', '--prefix', default='>', help='header line prefix (>)')	
+	optional.add_argument('-M', '--multiline', action='store_true', default=False, help='required if input fasta sequences are spread over multiple line (false)')
+	optional.add_argument('-g', '--gauss', default=0, type=int, help='Standard deviation around fake QV (0)')
+
+	args = vars( parser.parse_args() )
+
+
+	# Verify Input validity
+	if(args['input'] is ''):
+		parser.print_help()
+		sys.exit()
+	if( (args['phred'] == -1  and args['qscore'] is '') or
+	    (not args['phred'] == -1 and not args['qscore'] is '')):
+		print "Exactly one of -qv/-ph needed."
+		parser.print_help()
+		sys.exit()
+	if( args['phred'] == -1 and len(args['qscore']) > 1 ):
+		print "Qscore must contain only one character"
+		parser.print_help()
+		sys.exit()
+	
+	
+	
+	# Prepare data before loop
+	infile = open( args['input'], 'r')
+	lines = infile.readlines()
+
+	#print args['phred']
+	
+	if( not args['phred'] == -1):
+		score=chr( args['phred'] )
+	else:
+		score=args['qscore']
+
+	# print score	
+	
+
+	# Start loop	
+	N = len(lines)
+	i = 0
+	
+	if( args['output'] is ''):
+		out = sys.stdout
+	else:
+		out = args['output']
+ 
+	
+	while( i < N):
+		line = lines[i].rstrip('\n')
+		i+=1
+		
+		if( len(line) > 0):
+			if( not line[0] == args['prefix'] ):
+				
+				if (args['gauss'] == 0):
+					QVline = fixedQV(line, score)
+				else:
+					QVline = gaussQV(line, score, args['gauss'])
+
+				print line
+				if args['headers']:
+					out.write('+\n')
+					# print "+"
+				out.write(QVline + '\n')
+				# print QVline
+			else:
+				out.write(line + '\n')
+				# print line
+		
+	#print "done"
+	
+	#print args['headers']	

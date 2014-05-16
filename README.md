@@ -19,6 +19,8 @@ This tool allows you to transform a fasta file into fastq by generating simulate
 ### fq_split
 This tool splits a single genome fasta file into ordered read with overlap. 
 
+### fq_smarttrim
+This program trims a fasta/fastq file by dividing its largest reads into multiple reads of maximum length and possible overlap.
 ### fq_translate
 This script can translate the quality values from illumina 1.5 to illumina 1.8, and vice-versa.
 

@@ -1,0 +1,105 @@
+#!/bin/env python2.7
+
+def exit(str):
+	print str
+	parser.print_help()
+	sys.exit()
+
+
+def trim(string, length, overlap):
+	trimmedlines = []
+
+	while True:
+		firstchunk = string[:length]
+		string = string[(length - overlap):]
+
+		trimmedlines.append(firstchunk)
+
+		if len(string) < length:
+			trimmedlines.append(string[:-1])
+			break
+ 	
+		
+	return trimmedlines
+
+
+if __name__ == "__main__":
+
+	import sys
+	import argparse
+
+	parser = argparse.ArgumentParser(description = 'Trims a fasta/fastq file by length, splitting too long reads into smaller ones',
+						prog='fq_smarttrim',
+						add_help = False)
+	
+	required = parser.add_argument_group('Required Arguments')
+	required.add_argument('-i', '--input', default = '', help = 'input file')
+	required.add_argument('-l', '--max-length', type = int, default = 0, help = 'maximum read length')
+
+	optional = parser.add_argument_group('Optional Arguments')
+	optional.add_argument('-o', '--output', default = '', help = 'output file (def: stdout)')
+	optional.add_argument('-Q', '--fastq', action='store_true', help = 'input is fastq')
+	optional.add_argument('-ovl', '--overlap', default = 0, type = int, help = 'overlap when splitting reads (0)')
+	optional.add_argument('-m', '--min-length', default = 1, type = int, help = 'minimum read lenght')
+
+	args = vars( parser.parse_args() )
+
+	# Verify input validity
+	if args['input'] is '':
+		exit('Must provide input file')
+	if args['max_length'] == 0:
+		exit('Must provide valid maximum read length')
+
+	
+	# Define output
+	if args['output'] is '':
+		out = sys.stdout
+	else:
+		out = open(args['output'], 'w')
+	
+	
+	# Open file
+	try:
+		infile = open(args['input'], 'r')
+		lines = infile.readlines()
+		
+		if not args['fastq']:
+			i = 0
+			for line in lines:
+				# out.write(line)
+				if (len(line) > args['max_length']):
+					newlines = trim(line, args['max_length'], args['overlap'])
+					for newline in newlines:
+						if len(line) >= args['min_length']:
+
+							header = ">" + args['input'] + "_" + str(i)
+							i +=1
+							out.write(header + '\n')
+							out.write(newline + '\n')
+						else:
+							# read too short
+							pass			
+				else:
+					if not (line[0] in ['>', '@', '+']) and (len(line) >= args['min_length']):
+						header = '>' + args['input'] + '_' + str(i)
+						i+=1
+						out.write(header + '\n')
+						out.write(line)	
+
+		else:
+			print 'Fastq not supported yet'
+		
+	
+	
+	except IOError as e:
+		print 'Error: File: ' + args['input'] + ' not found'
+		print e
+	#except Exception as e:
+	#	print 'Unkown error'
+	#	print e
+	finally:
+		if not args['output'] is '':
+			out.close()
+ 
+
+	

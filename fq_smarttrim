@@ -94,9 +94,6 @@ if __name__ == "__main__":
 	except IOError as e:
 		print 'Error: File: ' + args['input'] + ' not found'
 		print e
-	#except Exception as e:
-	#	print 'Unkown error'
-	#	print e
 	finally:
 		if not args['output'] is '':
 			out.close()

@@ -6,6 +6,7 @@ This is a bundle of scripts designed to manipulate fastq and fastq files.
 * fq_fakeqv
 * fq_split
 * fq_translate
+* fq_smarttrim
 * randseq
  
 
@@ -21,6 +22,7 @@ This tool splits a single genome fasta file into ordered read with overlap.
 
 ### fq_smarttrim
 This program trims a fasta/fastq file by dividing its largest reads into multiple reads of maximum length and possible overlap.
+
 ### fq_translate
 This script can translate the quality values from illumina 1.5 to illumina 1.8, and vice-versa.
 

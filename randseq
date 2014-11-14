@@ -3,8 +3,11 @@
 # Neat little generator to generate random reads
 # from a nucleotide file
 #
-# Jordan Texier, Jan 2014
-# DittmerLab, UNC
+# Author: Jordan Texier,
+# Created: Jan 2014
+# Modified: Oct 2014
+# 
+# DittmerLab, UNC Chapel Hill
 #
 
 def usage():
@@ -20,20 +23,39 @@ def getRandString(lines, stringsize, randseed):
 	try:
 		linenum=randseed/length
 		start=randseed%length
-	
-	
-		if (start < (length - stringsize)):
-			line = lines[linenum]
-		else:
-			line = lines[linenum][:-1] + lines[linenum + 1]
-	
-		read = line[start: (start + stringsize)]
-			
-		return read
+
+		# If first line, go to second
+		if linenum == 0:
+			linenum=1
+			start=0
+		
+		# Gather the minimum amount of lines to extract
+		Nlines = (stringsize/length)+2
+		if Nlines < 2:
+			Nlines = 2
+
+		templines = lines[linenum:(linenum+Nlines)]
+
+		# Merge multiple lines together
+		bigline = ''.join(templines)
+		bigline = bigline.replace('\n','')
+
+		if len(bigline) < stringsize:
+			raise IndexError('Probably reached end of file')
+
+		# Extract read from multiline
+		# print bigline
+		read = bigline[start:(start + stringsize)]
+
+		# Check if line is actually reads (first 2 char)
+		if read[0] not in ['A','G','C','T'] or read[1] not in ['A','C','G','T']:
+			read = 'N'
+
+
+		return read.strip()
+
 	except IndexError:
-		#debug=open("debug.log", "w")
-		#debug.write("index out of range")
-		#debug.close()
+		# print "IndexError"
 		return 'N'
 
 
@@ -71,7 +93,7 @@ if __name__ == "__main__":
 
 	# Create Parser, required and optional args. Then parse
 	parser=argparse.ArgumentParser(description='Generate random reads from genome file.', 
-					prog='randseq.py', usage='%(prog)s -i inputfile [options]',
+					prog='randseq', usage='%(prog)s -i inputfile [options]',
 					formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position = 50, width = 200),
 					add_help=False)
 
